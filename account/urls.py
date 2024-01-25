@@ -5,5 +5,6 @@ from rest_framework_swagger.views import get_swagger_view
 
 urlpatterns = [
     re_path(r'^auth/', include('djoser.urls')),
+    
     # re_path(r'^auth/', include('djoser.urls.authtoken')),
 ]

@@ -44,7 +44,13 @@ INSTALLED_APPS = [
     'djoser',
     'drf_yasg',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist'
+    'rest_framework_simplejwt.token_blacklist',
+    'django_otp',
+    'django_otp.plugins.otp_static',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_email',
+    'two_factor',
+    'two_factor.plugins.email',
 ]
 
 MIDDLEWARE = [
@@ -55,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_otp.middleware.OTPMiddleware',
 ]
 
 ROOT_URLCONF = 'server_app_dev.urls'
@@ -186,3 +193,5 @@ SIMPLE_JWT = {
 AUTH_PROFILE_MODULE = 'account.CustomUser'
 
 AUTH_USER_MODEL = 'account.CustomUser'
+
+LOGIN_URL = 'two_factor:login'
