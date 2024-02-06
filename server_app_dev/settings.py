@@ -49,8 +49,6 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_static',
     'django_otp.plugins.otp_totp',
     'django_otp.plugins.otp_email',
-    'two_factor',
-    'two_factor.plugins.email',
 ]
 
 MIDDLEWARE = [
@@ -142,9 +140,11 @@ REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny'
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ]
 }
@@ -194,4 +194,11 @@ AUTH_PROFILE_MODULE = 'account.CustomUser'
 
 AUTH_USER_MODEL = 'account.CustomUser'
 
-LOGIN_URL = 'two_factor:login'
+OTP_LENGTH = 6
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'fraxinus.d@gmail.com'
+EMAIL_HOST_PASSWORD = 'kiqc pdor fuzb qqbv '

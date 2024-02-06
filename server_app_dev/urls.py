@@ -53,5 +53,4 @@ urlpatterns = [
     # python manage.py flushexpiredtokens to delete expired blacklisted tokens
     path('api/token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
     path('api/account/', include('account.urls')),
-    path('', include(tf_urls)),
 ]
