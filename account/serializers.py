@@ -1,11 +1,12 @@
 from rest_framework import serializers
-from .models import CustomUser
+from .models import CustomUser, OTP
 from django.contrib.auth import authenticate, get_user_model
 from .utils import generate_otp
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
 
-class LoginSerializer(serializers.Serializer):
+class GetOTPSerializer(serializers.Serializer):
     """
     This serializer defines two fields for authentication:
       * username
@@ -45,12 +46,28 @@ class LoginSerializer(serializers.Serializer):
         attrs['user'] = user
         return attrs
     
+    def create_otp(self, instance):
+        code = generate_otp()
+        otp = OTP.objects.create(user=instance, code=code)
+        return otp
+    
 
-    def update(self, instance):
-        otp = generate_otp()
-        instance.otp = otp
-        instance.save()
-        return instance
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        # The default result (access/refresh tokens)
+        data = super(CustomTokenObtainPairSerializer, self).validate(attrs)
+        # Custom data you want to include
+        data.update({'user': self.user.username})
+        data.update({'id': self.user.id})
+        # and everything else you want to send in the response
+        return data
+    
+
+    # def update(self, instance):
+    #     otp = generate_otp()
+    #     instance.otp = otp
+    #     instance.save()
+    #     return instance
     
 
 # class LoginSerializer(serializers.ModelSerializer):

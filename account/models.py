@@ -5,6 +5,7 @@ from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
 )
 from django.utils import timezone
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 class CustomManager(BaseUserManager):
@@ -36,7 +37,6 @@ class CustomUser(AbstractBaseUser):
     )
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
-    otp = models.CharField(max_length=6, null=True, blank=True)
     objects = CustomManager()
 
     USERNAME_FIELD = 'email'
@@ -57,5 +57,10 @@ class CustomUser(AbstractBaseUser):
         return self.is_admin
 
 
-# class OTP:
-#     code = models.
+class OTP(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    code = models.PositiveIntegerField(validators=[MinValueValidator(100000), MaxValueValidator(999999)])
+    time_created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.code}"

@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError
 from django import forms
-from .models import CustomUser
+from .models import CustomUser, OTP
 
 
 class UserCreationForm(forms.ModelForm):
@@ -13,7 +13,7 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ('email', 'otp',)
+        fields = ('email',)
 
     def clean_password2(self):
         # Check that the two password entries match
@@ -65,3 +65,4 @@ class UserAdmin(BaseUserAdmin):
 
 
 admin.site.register(CustomUser, UserAdmin)
+admin.site.register(OTP)

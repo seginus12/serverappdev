@@ -25,8 +25,6 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView,
     TokenBlacklistView
 )
-from two_factor.urls import urlpatterns as tf_urls
-
 
 schema_view = get_schema_view(
     openapi.Info(
