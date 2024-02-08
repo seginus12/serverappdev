@@ -1,5 +1,5 @@
 import datetime
-from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
@@ -49,6 +49,9 @@ class CustomUser(AbstractBaseUser):
 
     def has_module_perms(self, app_label):
         return True
+    
+    def tokens(self):
+        pass
 
     @property
     def is_staff(self):
@@ -57,10 +60,10 @@ class CustomUser(AbstractBaseUser):
         return self.is_admin
 
 
-class OTP(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+class OneTimePassword(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     code = models.PositiveIntegerField(validators=[MinValueValidator(100000), MaxValueValidator(999999)])
-    time_created = models.DateTimeField(auto_now_add=True)
+#    time_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
-        return f"{self.code}"
+        return f"{self.user.email}-{self.code}"

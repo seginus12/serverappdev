@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.exceptions import ValidationError
 from django import forms
-from .models import CustomUser, OTP
+from .models import CustomUser, OneTimePassword
 
 
 class UserCreationForm(forms.ModelForm):
@@ -65,4 +65,4 @@ class UserAdmin(BaseUserAdmin):
 
 
 admin.site.register(CustomUser, UserAdmin)
-admin.site.register(OTP)
+admin.site.register(OneTimePassword)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, OTP
+from .models import CustomUser, OneTimePassword
 from django.contrib.auth import authenticate, get_user_model
 from .utils import generate_otp
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -48,19 +48,44 @@ class GetOTPSerializer(serializers.Serializer):
     
     def create_otp(self, instance):
         code = generate_otp()
-        otp = OTP.objects.create(user=instance, code=code)
+        otp = OneTimePassword.objects.create(user=instance, code=code)
         return otp
     
 
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+# class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+#     def validate(self, attrs):
+#         # The default result (access/refresh tokens)
+#         data = super(CustomTokenObtainPairSerializer, self).validate(attrs)
+#         # Custom data you want to include
+#         data.update({'user': self.user.username})
+#         data.update({'id': self.user.id})
+#         # and everything else you want to send in the response
+#         return data
+    
+
+class UserRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(max_length=64, min_length=8, write_only=True)
+    password2 = serializers.CharField(max_length=64, min_length=8, write_only=True)
+
+    class Meta:
+        model=CustomUser
+        fields=['email', 'password', 'password2']
+
     def validate(self, attrs):
-        # The default result (access/refresh tokens)
-        data = super(CustomTokenObtainPairSerializer, self).validate(attrs)
-        # Custom data you want to include
-        data.update({'user': self.user.username})
-        data.update({'id': self.user.id})
-        # and everything else you want to send in the response
-        return data
+        password = attrs.get('password')
+        password2 = attrs.get('password')
+        if password != password2:
+            raise serializers.ValidationError("Passwords do not match")
+        return attrs
+        
+
+    def create(self, validated_data):
+        user = CustomUser(
+            email=validated_data["email"],
+        )
+        user.set_password(validated_data["password"])
+        user.save()
+        return user
     
 
     # def update(self, instance):
