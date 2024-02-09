@@ -3,64 +3,9 @@ from .models import CustomUser, OneTimePassword
 from django.contrib.auth import authenticate, get_user_model
 from .utils import generate_otp
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.exceptions import AuthenticationFailed
 
 User = get_user_model()
-
-class GetOTPSerializer(serializers.Serializer):
-    """
-    This serializer defines two fields for authentication:
-      * username
-      * password.
-    It will try to authenticate the user with when validated.
-    """
-    email = serializers.CharField(
-        label="Username",
-        write_only=True
-    )
-    password = serializers.CharField(
-        label="Password",
-        # This will be used when the DRF browsable API is enabled
-        style={'input_type': 'password'},
-        trim_whitespace=False,
-        write_only=True
-    )
-
-    def validate(self, attrs):
-        # Take username and password from request
-        username = attrs.get('email')
-        password = attrs.get('password')
-
-        if username and password:
-            # Try to authenticate the user using Django auth framework.
-            user = authenticate(request=self.context.get('request'),
-                                username=username, password=password)
-            if not user:
-                # If we don't have a regular user, raise a ValidationError
-                msg = 'Access denied: wrong username or password.'
-                raise serializers.ValidationError(msg, code='authorization')
-        else:
-            msg = 'Both "username" and "password" are required.'
-            raise serializers.ValidationError(msg, code='authorization')
-        # We have a valid user, put it in the serializer's validated_data.
-        # It will be used in the view.
-        attrs['user'] = user
-        return attrs
-    
-    def create_otp(self, instance):
-        code = generate_otp()
-        otp = OneTimePassword.objects.create(user=instance, code=code)
-        return otp
-    
-
-# class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-#     def validate(self, attrs):
-#         # The default result (access/refresh tokens)
-#         data = super(CustomTokenObtainPairSerializer, self).validate(attrs)
-#         # Custom data you want to include
-#         data.update({'user': self.user.username})
-#         data.update({'id': self.user.id})
-#         # and everything else you want to send in the response
-#         return data
     
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -88,12 +33,38 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return user
     
 
-    # def update(self, instance):
-    #     otp = generate_otp()
-    #     instance.otp = otp
-    #     instance.save()
-    #     return instance
+class UserLoginSerializer(serializers.ModelSerializer):
+    email = serializers.CharField(max_length=64, label="Username", write_only=True)
+    password = serializers.CharField(label="Password", style={'input_type': 'password'}, trim_whitespace=False, write_only=True)
     
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'password',]
+
+    def validate(self, attrs):
+        username = attrs.get('email')
+        password = attrs.get('password')
+        request = self.context.get('request')
+        if username and password:
+            user = authenticate(request=request, username=username, password=password)
+            if not user:
+                raise AuthenticationFailed('Access denied: wrong username or password.')
+        else:
+            raise AuthenticationFailed('Both "username" and "password" are required.')
+        tokens = user.tokens()
+        return {
+            'username': user.email,
+            'access_token': tokens['access'],
+            'refresh_token': tokens['refresh'],
+        }
+    
+
+class UserGetSerializer(serializers.ModelSerializer):
+    email = serializers.CharField(max_length=64, label="Username", write_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ["email"]
 
 # class LoginSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -136,3 +107,60 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 #         user.save()
 #  #       send_otp(validated_data["phone_number"], otp)
 #         return user
+
+
+# class GetOTPSerializer(serializers.Serializer):
+#     """
+#     This serializer defines two fields for authentication:
+#       * username
+#       * password.
+#     It will try to authenticate the user with when validated.
+#     """
+#     email = serializers.CharField(
+#         label="Username",
+#         write_only=True
+#     )
+#     password = serializers.CharField(
+#         label="Password",
+#         # This will be used when the DRF browsable API is enabled
+#         style={'input_type': 'password'},
+#         trim_whitespace=False,
+#         write_only=True
+#     )
+
+#     def validate(self, attrs):
+#         # Take username and password from request
+#         username = attrs.get('email')
+#         password = attrs.get('password')
+
+#         if username and password:
+#             # Try to authenticate the user using Django auth framework.
+#             user = authenticate(request=self.context.get('request'),
+#                                 username=username, password=password)
+#             if not user:
+#                 # If we don't have a regular user, raise a ValidationError
+#                 msg = 'Access denied: wrong username or password.'
+#                 raise serializers.ValidationError(msg, code='authorization')
+#         else:
+#             msg = 'Both "username" and "password" are required.'
+#             raise serializers.ValidationError(msg, code='authorization')
+#         # We have a valid user, put it in the serializer's validated_data.
+#         # It will be used in the view.
+#         attrs['user'] = user
+#         return attrs
+    
+#     def create_otp(self, instance):
+#         code = generate_otp()
+#         otp = OneTimePassword.objects.create(user=instance, code=code)
+#         return otp
+    
+
+# class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+#     def validate(self, attrs):
+#         # The default result (access/refresh tokens)
+#         data = super(CustomTokenObtainPairSerializer, self).validate(attrs)
+#         # Custom data you want to include
+#         data.update({'user': self.user.username})
+#         data.update({'id': self.user.id})
+#         # and everything else you want to send in the response
+#         return data

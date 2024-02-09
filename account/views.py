@@ -1,28 +1,14 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
-from .serializers import GetOTPSerializer, UserRegisterSerializer
+from .serializers import UserRegisterSerializer, UserLoginSerializer, UserGetSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import permissions
 from rest_framework import views
 from .utils import send_otp_email, generate_otp
-from .models import OneTimePassword
+from .models import OneTimePassword, CustomUser
 
-
-class GetOTPView(views.APIView):
-    # This view should be accessible also for unauthenticated users.
-    permission_classes = (permissions.AllowAny,)
-
-    def post(self, request, format=None):
-        serializer = GetOTPSerializer(data=self.request.data,
-            context={ 'request': self.request })
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        otp = serializer.create_otp(instance=user)
-        send_otp_email(user.email, otp.code)
-        return Response(f"Verification code has been sended to you email", status=status.HTTP_200_OK)
-    
 
 class RegisterUserView(GenericAPIView):
     permission_classes = (permissions.AllowAny,)
@@ -44,6 +30,7 @@ class RegisterUserView(GenericAPIView):
 
 
 class VerifyUserEmail(GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
     def post(self, request):
         otp_code = request.data.get('otp')
         try:
@@ -60,5 +47,50 @@ class VerifyUserEmail(GenericAPIView):
             }, status=status.HTTP_204_NO_CONTENT)
         except OneTimePassword.DoesNotExist:
             return Response({
-                'message': 'Verification code was not provided'
+                'message': 'Verification code is invaid or was not provided'
             }, status=status.HTTP_404_NOT_FOUND)
+        
+
+class LoginUserView(GenericAPIView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = UserLoginSerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            serializer.validated_data,
+            status=status.HTTP_200_OK
+        )
+    
+
+class GetUserView(GenericAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    serializer_class = UserGetSerializer   
+    def get(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = CustomUser.objects.get(email=serializer.validated_data['email'])
+        return Response(
+            {
+                'id': user.id,
+                'username': user.email,
+                'is_verified': user.is_verified,
+                'is_active': user.is_active,
+                'is_admin': user.is_admin
+            },
+            status=status.HTTP_200_OK
+        )
+
+# class GetOTPView(views.APIView):
+#     # This view should be accessible also for unauthenticated users.
+#     permission_classes = (permissions.AllowAny,)
+
+#     def post(self, request, format=None):
+#         serializer = GetOTPSerializer(data=self.request.data,
+#             context={ 'request': self.request })
+#         serializer.is_valid(raise_exception=True)
+#         user = serializer.validated_data['user']
+#         otp = serializer.create_otp(instance=user)
+#         send_otp_email(user.email, otp.code)
+#         return Response(f"Verification code has been sended to you email", status=status.HTTP_200_OK)
+    

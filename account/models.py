@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
 )
 from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class CustomManager(BaseUserManager):
@@ -35,8 +36,11 @@ class CustomUser(AbstractBaseUser):
         max_length=255,
         unique=True,
     )
+    is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
+    # access_token = models.CharField(max_length=256, blank=True, null=True)
+    # refresh_token = models.CharField(max_length=256, blank=True, null=True)
     objects = CustomManager()
 
     USERNAME_FIELD = 'email'
@@ -51,7 +55,11 @@ class CustomUser(AbstractBaseUser):
         return True
     
     def tokens(self):
-        pass
+        refresh = RefreshToken.for_user(self)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
+        }
 
     @property
     def is_staff(self):
