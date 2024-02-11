@@ -1,11 +1,9 @@
-from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView
 from .serializers import *
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import permissions
-from rest_framework import views
 from .utils import send_otp_email, generate_otp
 from .models import OneTimePassword, CustomUser
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
@@ -147,7 +145,7 @@ class ResetJWTTokensView(APIView):
 class ResetTokensView(APIView):
     permission_classes = (permissions.IsAdminUser,)
     authentication_classes = (JWTAuthentication,)
-    
+
     def delete(self, request):
         Token.objects.all().delete()
         return Response(
@@ -155,18 +153,3 @@ class ResetTokensView(APIView):
             status=status.HTTP_205_RESET_CONTENT
             )
 
-
-    
-# class GetOTPView(views.APIView):
-#     # This view should be accessible also for unauthenticated users.
-#     permission_classes = (permissions.AllowAny,)
-
-#     def post(self, request, format=None):
-#         serializer = GetOTPSerializer(data=self.request.data,
-#             context={ 'request': self.request })
-#         serializer.is_valid(raise_exception=True)
-#         user = serializer.validated_data['user']
-#         otp = serializer.create_otp(instance=user)
-#         send_otp_email(user.email, otp.code)
-#         return Response(f"Verification code has been sended to you email", status=status.HTTP_200_OK)
-    

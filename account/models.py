@@ -40,8 +40,6 @@ class CustomUser(AbstractBaseUser):
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
-    # access_token = models.CharField(max_length=256, blank=True, null=True)
-    # refresh_token = models.CharField(max_length=256, blank=True, null=True)
     objects = CustomManager()
 
     USERNAME_FIELD = 'email'
@@ -65,7 +63,6 @@ class CustomUser(AbstractBaseUser):
     @property
     def is_staff(self):
         "Is the user a member of staff?"
-        # Simplest possible answer: All admins are staff
         return self.is_admin
 
 
@@ -73,9 +70,7 @@ class OneTimePassword(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     code = models.CharField(max_length=settings.OTP_LENGTH)
     attemts = models.PositiveBigIntegerField(default=0)
-    # created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-#    time_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
         return f"{self.user.email}-{self.code}"
