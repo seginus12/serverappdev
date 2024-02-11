@@ -10,6 +10,7 @@ from .utils import send_otp_email, generate_otp
 from .models import OneTimePassword, CustomUser
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework.authentication import TokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class RegisterUserView(GenericAPIView):
@@ -129,12 +130,31 @@ class GetUserView(GenericAPIView):
         )
 
 
-class ResetTokenView(APIView):
-    def post(self, request):
+class ResetJWTTokensView(APIView):
+    permission_classes = (permissions.IsAdminUser,)
+    authentication_classes = (JWTAuthentication,)
+
+    def delete(self, request):
         tokens = OutstandingToken.objects.filter(user_id=request.user.id)
         for token in tokens:
             t, _ = BlacklistedToken.objects.get_or_create(token=token)
-        return Response(status=status.HTTP_205_RESET_CONTENT)
+        return Response(
+            data='All JWT tokens has been reseted',
+            status=status.HTTP_205_RESET_CONTENT
+            )
+    
+
+class ResetTokensView(APIView):
+    permission_classes = (permissions.IsAdminUser,)
+    authentication_classes = (JWTAuthentication,)
+    
+    def delete(self, request):
+        Token.objects.all().delete()
+        return Response(
+            data='All auth tokens has been reseted',
+            status=status.HTTP_205_RESET_CONTENT
+            )
+
 
     
 # class GetOTPView(views.APIView):
