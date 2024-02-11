@@ -7,6 +7,7 @@ from django.contrib.auth.models import (
 from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.conf import settings
 
 
 class CustomManager(BaseUserManager):
@@ -70,7 +71,10 @@ class CustomUser(AbstractBaseUser):
 
 class OneTimePassword(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    code = models.PositiveIntegerField(validators=[MinValueValidator(100000), MaxValueValidator(999999)])
+    code = models.CharField(max_length=settings.OTP_LENGTH)
+    attemts = models.PositiveBigIntegerField(default=0)
+    # created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 #    time_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:

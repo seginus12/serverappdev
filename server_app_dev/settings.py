@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'account',
     "corsheaders",
     'rest_framework',
-#    'rest_framework.authtoken',
+    'rest_framework.authtoken',
     # 'djoser',
     'drf_yasg',
     'rest_framework_simplejwt',
@@ -141,6 +141,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ]
 }
 
@@ -190,7 +191,7 @@ AUTH_USER_MODEL = 'account.CustomUser'
 
 # OTP settings
 OTP_LENGTH = 6
-MAX_OTP = 3
+MAX_OTP_ATTEMPTS = 3
 OTP_TIME_LIVE = 3 # minutes
 
 # Email settings
