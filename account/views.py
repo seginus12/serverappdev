@@ -129,12 +129,14 @@ class GetUserView(GenericAPIView):
 
 
 class ResetJWTTokensView(APIView):
-    permission_classes = (permissions.IsAdminUser,)
+    permission_classes = (permissions.IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
     def delete(self, request):
         tokens = OutstandingToken.objects.filter(user_id=request.user.id)
         for token in tokens:
+            print(token.token)
+            print(token.jti)
             t, _ = BlacklistedToken.objects.get_or_create(token=token)
         return Response(
             data='All JWT tokens has been reseted',

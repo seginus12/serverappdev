@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authtoken.models import Token
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 import datetime
 
 User = get_user_model()
@@ -95,7 +96,7 @@ class UserLogin2FASerializer(serializers.ModelSerializer):
         otp_code = generate_otp()
  #       otp_expiry = datetime.now() + timedelta(minutes = 10)
         try:
-            token = Token.objects.delete(user=user)
+            OneTimePassword.objects.filter(user=user).delete()
         except:
             pass
         finally:
@@ -105,6 +106,7 @@ class UserLogin2FASerializer(serializers.ModelSerializer):
     #           otp_expiry=otp_expiry,
     #           max_otp_try=settings.MAX_OTP_TRY
             )
+            otp_odject.save()
         send_otp_email(user.email, otp_code)
         return otp_odject
     
@@ -118,8 +120,8 @@ class UserLogin2FaCheckOTPSerializer(serializers.Serializer):
         otp_obj = OneTimePassword.objects.get(user=user)
         if otp_obj.attemts >= settings.MAX_OTP_ATTEMPTS:
             raise serializers.ValidationError("You have reached your attempt limit. Request new verification code.", code='authorization')
-        if ((datetime.datetime.now() - otp_obj.updated_at.replace(tzinfo=None)).total_seconds() / 60 ) > settings.OTP_TIME_LIVE:
-            print(otp_obj.updated_at.replace(tzinfo=None))
+        if ((datetime.datetime.now() - otp_obj.created_at.replace(tzinfo=None)).total_seconds() / 60 ) > settings.OTP_TIME_LIVE:
+            print(otp_obj.created_at.replace(tzinfo=None))
             raise serializers.ValidationError("Verification code has expired. Request new one.", code='authorization')
         user_otp_code = otp_obj.code
         if str(user_otp_code) != attrs['otp_code']:
@@ -145,12 +147,18 @@ class SendNewOTPSerializer(serializers.Serializer):
         return attrs
     
     def update(self, attrs):
-        email = attrs['user']
-        otp_obj = OneTimePassword.objects.get(user=email)
-        otp_obj.code = generate_otp()
-        otp_obj.attemts = 0
-        send_otp_email(email=email, otp=otp_obj.code)
-        otp_obj.save()
+        user = attrs['user']
+        try:
+            OneTimePassword.objects.filter(user=user).delete()
+        except:
+            pass
+        finally:
+            otp_obj = OneTimePassword(
+            user=user,
+            code=generate_otp(),
+            )
+            otp_obj.save()
+        # Send to email
         return otp_obj
 
 
@@ -161,3 +169,7 @@ class UserGetSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ["email"]
         
+
+class ResetJWTTokensSerializer(serializers.Serializer):
+    refresh = serializers.CharField(max_length=255)
+
