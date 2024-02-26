@@ -115,7 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Yekaterinburg'
 
 USE_I18N = True
 
@@ -192,7 +192,7 @@ AUTH_USER_MODEL = 'account.CustomUser'
 # OTP settings
 OTP_LENGTH = 6
 MAX_OTP_ATTEMPTS = 3
-OTP_TIME_LIVE = 3 # minutes
+OTP_TIME_LIVE = 60 # minutes
 
 # Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

@@ -80,8 +80,13 @@ class UserLogin2FASerializer(serializers.ModelSerializer):
                 raise AuthenticationFailed('Access denied: wrong username or password.')
         else:
             raise AuthenticationFailed('Both "username" and "password" are required.')
-        user.auth_token.delete()
-        Token.objects.create(user=user)
+        # Trying to delete user's token if exists
+        try:
+            user.auth_token.delete()
+        except:
+            pass
+        finally:
+            Token.objects.create(user=user)
         attrs['user'] = user
         return attrs
         
@@ -89,8 +94,11 @@ class UserLogin2FASerializer(serializers.ModelSerializer):
         user = validated_data['user']
         otp_code = generate_otp()
  #       otp_expiry = datetime.now() + timedelta(minutes = 10)
-        otp_odject = OneTimePassword.objects.get(user=user)
-        if not otp_odject:
+        try:
+            token = Token.objects.delete(user=user)
+        except:
+            pass
+        finally:
             otp_odject = OneTimePassword(
                 user=user,
                 code=otp_code,
@@ -111,6 +119,7 @@ class UserLogin2FaCheckOTPSerializer(serializers.Serializer):
         if otp_obj.attemts >= settings.MAX_OTP_ATTEMPTS:
             raise serializers.ValidationError("You have reached your attempt limit. Request new verification code.", code='authorization')
         if ((datetime.datetime.now() - otp_obj.updated_at.replace(tzinfo=None)).total_seconds() / 60 ) > settings.OTP_TIME_LIVE:
+            print(otp_obj.updated_at.replace(tzinfo=None))
             raise serializers.ValidationError("Verification code has expired. Request new one.", code='authorization')
         user_otp_code = otp_obj.code
         if str(user_otp_code) != attrs['otp_code']:
