@@ -131,13 +131,16 @@ class GetUserView(GenericAPIView):
 class ResetJWTTokensView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+    serializer_class = ResetJWTTokensSerializer
 
     def delete(self, request):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        current_token = serializer.data['refresh']
         tokens = OutstandingToken.objects.filter(user_id=request.user.id)
         for token in tokens:
-            print(token.token)
-            print(token.jti)
-            t, _ = BlacklistedToken.objects.get_or_create(token=token)
+            if token.token != current_token:
+                t, _ = BlacklistedToken.objects.get_or_create(token=token)
         return Response(
             data='All JWT tokens has been reseted',
             status=status.HTTP_205_RESET_CONTENT

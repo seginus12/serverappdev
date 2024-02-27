@@ -200,3 +200,6 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'fraxinus.d@gmail.com'
 EMAIL_HOST_PASSWORD = 'kiqc pdor fuzb qqbv'
 
+#
+MAX_JWT_TOKENS = 5
+

@@ -8,6 +8,7 @@ from rest_framework.authtoken.models import Token
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 import datetime
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
 User = get_user_model()
     
@@ -55,6 +56,9 @@ class UserLoginNo2FASerializer(serializers.ModelSerializer):
                 raise AuthenticationFailed('Access denied: wrong username or password.')
         else:
             raise AuthenticationFailed('Both "username" and "password" are required.')
+        print(OutstandingToken.objects.filter(user_id=user.id).count())
+        if OutstandingToken.objects.filter(user_id=user.id).count() > settings.MAX_JWT_TOKENS:
+            raise AuthenticationFailed('You have to many sessions. Logout from other devices.')
         tokens = user.tokens()
         return {
             'username': user.email,
@@ -107,7 +111,8 @@ class UserLogin2FASerializer(serializers.ModelSerializer):
     #           max_otp_try=settings.MAX_OTP_TRY
             )
             otp_odject.save()
-        send_otp_email(user.email, otp_code)
+        # send_otp_email(user.email, otp_code)
+        print(otp_code)
         return otp_odject
     
 
@@ -121,7 +126,6 @@ class UserLogin2FaCheckOTPSerializer(serializers.Serializer):
         if otp_obj.attemts >= settings.MAX_OTP_ATTEMPTS:
             raise serializers.ValidationError("You have reached your attempt limit. Request new verification code.", code='authorization')
         if ((datetime.datetime.now() - otp_obj.created_at.replace(tzinfo=None)).total_seconds() / 60 ) > settings.OTP_TIME_LIVE:
-            print(otp_obj.created_at.replace(tzinfo=None))
             raise serializers.ValidationError("Verification code has expired. Request new one.", code='authorization')
         user_otp_code = otp_obj.code
         if str(user_otp_code) != attrs['otp_code']:
