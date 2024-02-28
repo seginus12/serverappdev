@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import CustomUser, OneTimePassword
 from django.contrib.auth import authenticate, get_user_model
-from .utils import generate_otp, send_otp_email
+from .utils import generate_otp, send_otp_email, get_valid_refresh_count
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authtoken.models import Token
@@ -56,9 +56,8 @@ class UserLoginNo2FASerializer(serializers.ModelSerializer):
                 raise AuthenticationFailed('Access denied: wrong username or password.')
         else:
             raise AuthenticationFailed('Both "username" and "password" are required.')
-        print(OutstandingToken.objects.filter(user_id=user.id).count())
-        if OutstandingToken.objects.filter(user_id=user.id).count() > settings.MAX_JWT_TOKENS:
-            raise AuthenticationFailed('You have to many sessions. Logout from other devices.')
+        if get_valid_refresh_count(user=user) >= settings.MAX_JWT_TOKENS:
+            raise AuthenticationFailed('You have too many open sessions. Logout from other devices and try again.')
         tokens = user.tokens()
         return {
             'username': user.email,
@@ -86,6 +85,8 @@ class UserLogin2FASerializer(serializers.ModelSerializer):
         else:
             raise AuthenticationFailed('Both "username" and "password" are required.')
         # Trying to delete user's token if exists
+        if get_valid_refresh_count(user=user) > settings.MAX_JWT_TOKENS:
+            raise AuthenticationFailed('You have to many opened sessions. Logout from other devices and try again.')
         try:
             user.auth_token.delete()
         except:
@@ -98,7 +99,6 @@ class UserLogin2FASerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = validated_data['user']
         otp_code = generate_otp()
- #       otp_expiry = datetime.now() + timedelta(minutes = 10)
         try:
             OneTimePassword.objects.filter(user=user).delete()
         except:
@@ -107,8 +107,6 @@ class UserLogin2FASerializer(serializers.ModelSerializer):
             otp_odject = OneTimePassword(
                 user=user,
                 code=otp_code,
-    #           otp_expiry=otp_expiry,
-    #           max_otp_try=settings.MAX_OTP_TRY
             )
             otp_odject.save()
         # send_otp_email(user.email, otp_code)

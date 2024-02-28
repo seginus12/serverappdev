@@ -3,7 +3,7 @@ import string
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import CustomUser, OneTimePassword
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 import datetime
 
 
@@ -23,8 +23,17 @@ def send_otp_email(email, otp):
 
 def get_valid_refresh_count(user):
     user_tokens = OutstandingToken.objects.filter(user=user)
+    user_blacklisted_tokens = BlacklistedToken.objects.all()
     vaild_tokens_count = 0
+    flag = False
     for token in user_tokens:
-        if (token.expires_at.replace(tzinfo=None) - datetime.datetime.now()) > 0:
+        for blacklisted_token in user_blacklisted_tokens:
+            if token.token == blacklisted_token.token.token:
+                flag = True
+                break
+        if flag:
+            continue
+        if (token.expires_at.replace(tzinfo=None) - datetime.datetime.now()).total_seconds() > 0:
             vaild_tokens_count += 1
+    print(vaild_tokens_count)
     return vaild_tokens_count
