@@ -32,6 +32,7 @@ def get_valid_refresh_count(user):
                 flag = True
                 break
         if flag:
+            flag = False
             continue
         if (token.expires_at.replace(tzinfo=None) - datetime.datetime.now()).total_seconds() > 0:
             vaild_tokens_count += 1

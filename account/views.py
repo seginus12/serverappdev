@@ -74,8 +74,9 @@ class LoginUser2FAView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.create(serializer.validated_data)
         token = Token.objects.get(user=serializer.validated_data['user'])
+        message = serializer.validated_data['message']
         return Response(
-            token.key,
+            {token.key, message},
             status=status.HTTP_201_CREATED
         )
 
@@ -145,7 +146,21 @@ class ResetJWTTokensView(APIView):
             data='All JWT tokens has been reseted',
             status=status.HTTP_205_RESET_CONTENT
             )
-    
+      
+
+class BlacklistJWTTokensView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def delete(self, request):
+        tokens = OutstandingToken.objects.filter(user_id=request.user.id)
+        for token in tokens:
+            t, _ = BlacklistedToken.objects.get_or_create(token=token)
+        return Response(
+            data='All JWT tokens has been blacklisted',
+            status=status.HTTP_205_RESET_CONTENT
+            )
+
 
 class ResetTokensView(APIView):
     permission_classes = (permissions.IsAdminUser,)

@@ -56,13 +56,16 @@ class UserLoginNo2FASerializer(serializers.ModelSerializer):
                 raise AuthenticationFailed('Access denied: wrong username or password.')
         else:
             raise AuthenticationFailed('Both "username" and "password" are required.')
-        if get_valid_refresh_count(user=user) >= settings.MAX_JWT_TOKENS:
-            raise AuthenticationFailed('You have too many open sessions. Logout from other devices and try again.')
+        if get_valid_refresh_count(user=user) > settings.MAX_JWT_TOKENS:
+            message = 'You have to many open sessions. Logout from other devices.'
+        else:
+            message = ''       
         tokens = user.tokens()
         return {
             'username': user.email,
             'access_token': tokens['access'],
             'refresh_token': tokens['refresh'],
+            'message': message 
         }
 
 
@@ -86,7 +89,9 @@ class UserLogin2FASerializer(serializers.ModelSerializer):
             raise AuthenticationFailed('Both "username" and "password" are required.')
         # Trying to delete user's token if exists
         if get_valid_refresh_count(user=user) > settings.MAX_JWT_TOKENS:
-            raise AuthenticationFailed('You have to many opened sessions. Logout from other devices and try again.')
+            attrs['message'] = 'You have to many open sessions. Logout from other devices.'
+        else:
+            attrs['message'] = ''
         try:
             user.auth_token.delete()
         except:
