@@ -18,7 +18,9 @@ urlpatterns = [
     path('logout', TokenBlacklistView.as_view(), name='token_blacklist'),
     path('refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('reset_jwt_tokens', ResetJWTTokensView.as_view(), name='reset_jwt_tokens'),
-    path('blacklist_jwt_tokens', BlacklistJWTTokensView.as_view(), name='reset_jwt_tokens'),
+    path('blacklist_jwt_tokens', BlacklistJWTTokensView.as_view(), name='blacklist_jwt_tokens'),
     path('reset_tokens', ResetTokensView.as_view(), name='reset-tokens'),
+    path('group', GroupView.as_view(), name='get_role'),
+    path('permissions', PermissionsView.as_view(), name='permissions'),
     # python manage.py flushexpiredtokens to delete expired blacklisted tokens    
 ]

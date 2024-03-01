@@ -6,9 +6,13 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.authtoken.models import Token
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 import datetime
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+
 
 User = get_user_model()
     
@@ -169,7 +173,7 @@ class SendNewOTPSerializer(serializers.Serializer):
         return otp_obj
 
 
-class UserGetSerializer(serializers.ModelSerializer):
+class UserGetSerializer(serializers.Serializer):
     email = serializers.CharField(max_length=64, label="Username", write_only=True)
 
     class Meta:
@@ -179,4 +183,25 @@ class UserGetSerializer(serializers.ModelSerializer):
 
 class ResetJWTTokensSerializer(serializers.Serializer):
     refresh = serializers.CharField(max_length=255)
+
+
+class CreateRoleSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=64, label="name")
+
+    def create(self, data):
+        group = Group.objects.create(**data)
+        group.save()
+        return group
+
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = "__all__"
+
+
+class PermissionsSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=64, label="name")
+    codename = serializers.CharField(max_length=64, label="codename")
+    content_type = serializers.CharField(max_length=64, label="content_type")
 
