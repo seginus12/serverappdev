@@ -177,16 +177,17 @@ class ResetTokensView(APIView, PermissionRequiredMixin):
     permission_required = "delete_token"
     authentication_classes = (JWTAuthentication,)
 
-    # @check_user_permissions(request)
-    def delete(self, request):
-        if check_user_permissions(request.user, "delete_token"):
-            Token.objects.all().delete()
-            return Response(
-                data='All auth tokens has been reseted',
-                status=status.HTTP_205_RESET_CONTENT
-                )
-        else:
-            raise PermissionDenied()
+    @check_user_permissions
+    def delete(self, request, permission="delete_token"):
+        # if check_user_permissions(request.user, "delete_token"):
+        #     Token.objects.all().delete()
+        #     return Response(
+        #         data='All auth tokens has been reseted',
+        #         status=status.HTTP_205_RESET_CONTENT
+        #         )
+        # else:
+        #     raise PermissionDenied()
+        return Response(status=status.HTTP_200_OK)
 
 
 class GroupCRUDView(
@@ -196,9 +197,10 @@ class GroupCRUDView(
     mixins.DestroyModelMixin,
     mixins.CreateModelMixin
 ):
+    authentication_classes = (JWTAuthentication,)
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
-    permission_classes = [permissions.IsAdminUser,]
+    # permission_classes = [permissions.IsAdminUser,]
 
     def get(self, request: Request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -220,9 +222,10 @@ class PermissionCRUDView(
     mixins.DestroyModelMixin,
     mixins.CreateModelMixin
 ):
+    authentication_classes = (JWTAuthentication,)
     serializer_class = PermissionSerializer
     queryset = Permission.objects.all()
-    permission_classes = [permissions.IsAdminUser,]
+    # permission_classes = [permissions.IsAdminUser,]
 
     def get(self, request: Request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -238,41 +241,65 @@ class PermissionCRUDView(
     
 
 class UserGroupCRUDView(APIView,):
+    authentication_classes = (JWTAuthentication,)
     serializer_class = UserGroupSerializer
-    permission_classes = [permissions.IsAdminUser,]
+    # permission_classes = [permissions.IsAdminUser,]
 
     def get(self, request: Request, *args, **kwargs):
-        groups = request.user.groups.all()
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_id = serializer.data['user_id']
+        if user_id:
+            user = CustomUser.objects.get(pk=user_id)
+        else:
+            user = request.user
+        groups = user.groups.all()
         serializer = GroupSerializer(instance=groups, many=True)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Request, *args, **kwargs):
         serializer=self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+        user_id = serializer.data['user_id']
+        if user_id:
+            user = CustomUser.objects.get(pk=user_id)
+        else:
+            user = request.user
         groups = serializer.data['groups_id']
-        request.user.groups.set(groups)
+        user.groups.set(groups)
         return Response(status=status.HTTP_200_OK)
 
     def delete(self, request: Request, *args, **kwargs):
         serializer=self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+        user_id = serializer.data['user_id']
+        if user_id:
+            user = CustomUser.objects.get(pk=user_id)
+        else:
+            user = request.user
         groups = serializer.data['groups_id']
         for group in groups:
-            request.user.groups.remove(group)
+            user.groups.remove(group)
         return Response(status=status.HTTP_205_RESET_CONTENT)
     
     def put(self, request: Request, *args, **kwargs):
         serializer=self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+        user_id = serializer.data['user_id']
+        if user_id:
+            user = CustomUser.objects.get(pk=user_id)
+        else:
+            user = request.user
         groups = serializer.data['groups_id']
         for group in groups:
-            request.user.groups.add(group)
+            user.groups.add(group)
         return Response(status=status.HTTP_200_OK)
     
 
 class GroupPermissionCRUDView(APIView,):
+    authentication_classes = (JWTAuthentication,)
     serializer_class = GroupPermissionSerializer
-    permission_classes = [permissions.IsAdminUser,]
+    # permission_classes = [permissions.IsAdminUser,]
 
     def get(self, request: Request, *args, **kwargs):
         serializer=self.serializer_class(data=request.data)

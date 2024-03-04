@@ -39,6 +39,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         )
         user.set_password(validated_data["password"])
         user.save()
+        user_group = Group.objects.get(name="User").pk
+        user.groups.add(user_group)
         return user
     
 
@@ -202,7 +204,8 @@ class PermissionSerializer(serializers.ModelSerializer):
 
 
 class UserGroupSerializer(serializers.Serializer):
-    groups_id = serializers.ListField()
+    user_id = serializers.IntegerField(required=False, default=None)
+    groups_id = serializers.ListField(required=False, default=None)
 
 
 class GroupPermissionSerializer(serializers.Serializer):
