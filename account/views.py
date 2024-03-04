@@ -172,22 +172,17 @@ class BlacklistJWTTokensView(APIView):
             )
 
 
-class ResetTokensView(APIView, PermissionRequiredMixin):
-    # permission_classes = (permissions.IsAdminUser,)
-    permission_required = "delete_token"
+class ResetTokensView(APIView):
+    permission_classes = (permissions.IsAdminUser,)
     authentication_classes = (JWTAuthentication,)
 
-    @check_user_permissions
-    def delete(self, request, permission="delete_token"):
-        # if check_user_permissions(request.user, "delete_token"):
-        #     Token.objects.all().delete()
-        #     return Response(
-        #         data='All auth tokens has been reseted',
-        #         status=status.HTTP_205_RESET_CONTENT
-        #         )
-        # else:
-        #     raise PermissionDenied()
-        return Response(status=status.HTTP_200_OK)
+    @check_user_permissions(permission="delete_token")
+    def delete(self, request):
+        Token.objects.all().delete()
+        return Response(
+            data='All auth tokens has been reseted',
+            status=status.HTTP_205_RESET_CONTENT
+            )
 
 
 class GroupCRUDView(
@@ -200,7 +195,7 @@ class GroupCRUDView(
     authentication_classes = (JWTAuthentication,)
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
-    # permission_classes = [permissions.IsAdminUser,]
+    permission_classes = [permissions.IsAdminUser,]
 
     def get(self, request: Request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -225,7 +220,7 @@ class PermissionCRUDView(
     authentication_classes = (JWTAuthentication,)
     serializer_class = PermissionSerializer
     queryset = Permission.objects.all()
-    # permission_classes = [permissions.IsAdminUser,]
+    permission_classes = [permissions.IsAdminUser,]
 
     def get(self, request: Request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -243,7 +238,7 @@ class PermissionCRUDView(
 class UserGroupCRUDView(APIView,):
     authentication_classes = (JWTAuthentication,)
     serializer_class = UserGroupSerializer
-    # permission_classes = [permissions.IsAdminUser,]
+    permission_classes = [permissions.IsAdminUser,]
 
     def get(self, request: Request, *args, **kwargs):
         serializer=self.serializer_class(data=request.data)
@@ -299,7 +294,7 @@ class UserGroupCRUDView(APIView,):
 class GroupPermissionCRUDView(APIView,):
     authentication_classes = (JWTAuthentication,)
     serializer_class = GroupPermissionSerializer
-    # permission_classes = [permissions.IsAdminUser,]
+    permission_classes = [permissions.IsAdminUser,]
 
     def get(self, request: Request, *args, **kwargs):
         serializer=self.serializer_class(data=request.data)

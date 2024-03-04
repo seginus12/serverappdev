@@ -51,16 +51,13 @@ def check_perm(user: CustomUser, permission: string):
                 return True
     return False
 
-def check_user_permissions(func):
-    def decorator(viewClass, request, permission):
-        # if check_perm(user, permission):
-        #     def wrapper(*args, **kwargs):
-        #         method = f(*args, **kwargs)
-        #         return method
-        # else:
-        #     raise PermissionDenied()
-        # return wrapper
-        print(request.user)
-        print(permission)
-        return func(viewClass, request)
+def check_user_permissions(permission):
+    def decorator(function):
+        def wrapper(viewClass, request):
+            if check_perm(request.user, permission):
+                result = function(viewClass, request)
+            else:
+                raise PermissionDenied()
+            return result
+        return wrapper
     return decorator
