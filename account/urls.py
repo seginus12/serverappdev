@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from rest_framework_simplejwt import views as jwt_views
 from .views import *
 from rest_framework_simplejwt.views import (
@@ -20,7 +20,10 @@ urlpatterns = [
     path('reset_jwt_tokens', ResetJWTTokensView.as_view(), name='reset_jwt_tokens'),
     path('blacklist_jwt_tokens', BlacklistJWTTokensView.as_view(), name='blacklist_jwt_tokens'),
     path('reset_tokens', ResetTokensView.as_view(), name='reset-tokens'),
-    path('group', GroupView.as_view(), name='get_role'),
-    path('permissions', PermissionsView.as_view(), name='permissions'),
+
+    re_path('group/(?P<pk>\w+|)', GroupCRUDView.as_view(), name='group_crud'),
+    re_path('permission/(?P<pk>\w+|)', PermissionCRUDView.as_view(), name='permission_crud'),
+    path('user_group', UserGroupCRUDView.as_view(), name='user_group_crud'),
+    path('group_permission', GroupPermissionCRUDView.as_view(), name='group_permission_crud')
     # python manage.py flushexpiredtokens to delete expired blacklisted tokens    
 ]

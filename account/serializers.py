@@ -185,23 +185,26 @@ class ResetJWTTokensSerializer(serializers.Serializer):
     refresh = serializers.CharField(max_length=255)
 
 
-class CreateRoleSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=64, label="name")
-
-    def create(self, data):
-        group = Group.objects.create(**data)
-        group.save()
-        return group
-
-
 class GroupSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=50)
+
     class Meta:
         model = Group
+        fields = ["id", "name"]
+
+
+class PermissionSerializer(serializers.ModelSerializer):
+    # name = serializers.CharField(max_length=50)
+
+    class Meta:
+        model = Permission
         fields = "__all__"
 
 
-class PermissionsSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=64, label="name")
-    codename = serializers.CharField(max_length=64, label="codename")
-    content_type = serializers.CharField(max_length=64, label="content_type")
+class UserGroupSerializer(serializers.Serializer):
+    groups_id = serializers.ListField()
 
+
+class GroupPermissionSerializer(serializers.Serializer):
+    group_id = serializers.IntegerField()
+    permissions_id = serializers.ListField(required=False, default=[])

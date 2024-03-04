@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView, RetrieveUpdateDestroyAPIView
 from .serializers import *
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import generics, mixins, status
 from rest_framework import permissions
-from .utils import send_otp_email, generate_otp
+from .utils import send_otp_email, generate_otp, check_user_permissions
 from .models import OneTimePassword, CustomUser
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework.authentication import TokenAuthentication
@@ -15,6 +15,10 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
 from django.shortcuts import get_object_or_404
+from rest_framework.request import Request
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import PermissionDenied
 
 
 class RegisterUserView(GenericAPIView):
@@ -168,137 +172,158 @@ class BlacklistJWTTokensView(APIView):
             )
 
 
-class ResetTokensView(APIView):
-    permission_classes = (permissions.IsAdminUser,)
+class ResetTokensView(APIView, PermissionRequiredMixin):
+    # permission_classes = (permissions.IsAdminUser,)
+    permission_required = "delete_token"
     authentication_classes = (JWTAuthentication,)
 
+    # @check_user_permissions(request)
     def delete(self, request):
-        Token.objects.all().delete()
-        return Response(
-            data='All auth tokens has been reseted',
-            status=status.HTTP_205_RESET_CONTENT
-            )
+        if check_user_permissions(request.user, "delete_token"):
+            Token.objects.all().delete()
+            return Response(
+                data='All auth tokens has been reseted',
+                status=status.HTTP_205_RESET_CONTENT
+                )
+        else:
+            raise PermissionDenied()
 
 
-class CreateRoleView(APIView):
-    permission_classes = (permissions.IsAdminUser,)
-    authentication_classes = (JWTAuthentication,)
-    serializer_class = CreateRoleSerializer
-
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.create(serializer.data)
-        return Response(
-            data=f"Group {serializer.data['name']} has been created.",
-            status=status.HTTP_201_CREATED
-        )
-
-
-class GroupView(RetrieveUpdateDestroyAPIView):
-    queryset = Group.objects.all()
+class GroupCRUDView(
+    generics.GenericAPIView,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.CreateModelMixin
+):
     serializer_class = GroupSerializer
+    queryset = Group.objects.all()
+    permission_classes = [permissions.IsAdminUser,]
 
-    def get_object(self):
-        obj = get_object_or_404(Group, name=self.request.data['name'])
-        self.check_object_permissions(self.request, obj)
-        return obj
+    def get(self, request: Request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
+    def put(self, request: Request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
-# class RolesView(APIView):
-#     permission_classes = (permissions.IsAdminUser,)
-#     authentication_classes = (JWTAuthentication,)
-#     serializer_class = RolesSerializer
-
-#     def post(self, request):
-#         serializer = self.serializer_class(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         name = serializer.data['name']
-#         group = Group.objects.create(name=name)
-#         group.save()
-#         return Response(
-#             data=f"Group {name} has been created.",
-#             status=status.HTTP_201_CREATED
-#         )
-
-#     def get(self, request):
-#         serializer = self.serializer_class(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         name = serializer.data['name']
-#         try:
-#             group = Group.objects.get(name=name)
-#         except:
-#             raise ObjectDoesNotExist("No such group.")
-#         return Response(
-#             data={
-#                 'id': group.id,
-#                 'name': group.name
-#             },
-#             status=status.HTTP_200_OK
-#         )
+    def delete(self, request: Request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
     
-#     def delete(self, request):
-#         serializer = self.serializer_class(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         name = serializer.data['name']
-#         try:
-#             Group.objects.get(name=name).delete()
-#         except:
-#             raise ObjectDoesNotExist("No such group.")
-#         return Response(
-#             data=f"Group {name} has been deleted.",
-#             status=status.HTTP_200_OK
-#         )
-
-#     def put(self, request):
-#         pass
-
-
-class PermissionsView(APIView):
-    permission_classes = (permissions.IsAdminUser,)
-    authentication_classes = (JWTAuthentication,)
-    serializer_class = PermissionsSerializer
-
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        name = serializer.data['name']
-        codename = serializer.data['codename']
-        model = apps.get_model(app_label='account', model_name=serializer.data['content_type'])
-        content_type = ContentType.objects.get_for_model(model)
-        permission = Permission.objects.create(name=name, codename=codename, content_type=content_type)
-        permission.save()
-        return Response(
-            data=f"Permission {codename} has been created.",
-            status=status.HTTP_201_CREATED
-        )
-
-    def get(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        name = serializer.data['name']
-        codename = serializer.data['codename']
-        model = apps.get_model(app_label='account', model_name=serializer.data['content_type'])
-        content_type = ContentType.objects.get_for_model(model)
-        permission = Permission.objects.create(name=name, codename=codename, content_type=content_type)
-        permission.save()
-        return Response(
-            data=f"Permission {codename} has been created.",
-            status=status.HTTP_201_CREATED
-        )
+    def post(self, request: Request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
     
-    def delete(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        name = serializer.data['name']
-        try:
-            Group.objects.get(name=name).delete()
-        except:
-            raise ObjectDoesNotExist("No such group.")
-        return Response(
-            data=f"Group {name} has been deleted.",
-            status=status.HTTP_200_OK
-        )
 
-    def put(self, request):
-        pass
+class PermissionCRUDView(
+    generics.GenericAPIView,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.CreateModelMixin
+):
+    serializer_class = PermissionSerializer
+    queryset = Permission.objects.all()
+    permission_classes = [permissions.IsAdminUser,]
+
+    def get(self, request: Request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request: Request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request: Request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+    
+    def post(self, request: Request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+    
+
+class UserGroupCRUDView(APIView,):
+    serializer_class = UserGroupSerializer
+    permission_classes = [permissions.IsAdminUser,]
+
+    def get(self, request: Request, *args, **kwargs):
+        groups = request.user.groups.all()
+        serializer = GroupSerializer(instance=groups, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request: Request, *args, **kwargs):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        groups = serializer.data['groups_id']
+        request.user.groups.set(groups)
+        return Response(status=status.HTTP_200_OK)
+
+    def delete(self, request: Request, *args, **kwargs):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        groups = serializer.data['groups_id']
+        for group in groups:
+            request.user.groups.remove(group)
+        return Response(status=status.HTTP_205_RESET_CONTENT)
+    
+    def put(self, request: Request, *args, **kwargs):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        groups = serializer.data['groups_id']
+        for group in groups:
+            request.user.groups.add(group)
+        return Response(status=status.HTTP_200_OK)
+    
+
+class GroupPermissionCRUDView(APIView,):
+    serializer_class = GroupPermissionSerializer
+    permission_classes = [permissions.IsAdminUser,]
+
+    def get(self, request: Request, *args, **kwargs):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        group = get_object_or_404(Group, pk=serializer.data['group_id'])
+        permissions = group.permissions.all()
+        serializer = PermissionSerializer(instance=permissions, many=True)
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request: Request, *args, **kwargs):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        permissions = serializer.data['permissions_id']
+        group = get_object_or_404(Group, pk=serializer.data['group_id'])
+        group.permissions.set(permissions)
+        return Response(status=status.HTTP_200_OK)
+
+    def delete(self, request: Request, *args, **kwargs):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        group = get_object_or_404(Group, pk=serializer.data['group_id'])
+        permissions = serializer.data['permissions_id']
+        for permission in permissions:
+            group.permissions.remove(permission)
+        return Response(status=status.HTTP_205_RESET_CONTENT)
+    
+    def put(self, request: Request, *args, **kwargs):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        group = get_object_or_404(Group, pk=serializer.data['group_id'])
+        permissions = serializer.data['permissions_id']
+        for permission in permissions:
+            group.permissions.add(permission)
+            print(permission)
+        return Response(status=status.HTTP_200_OK)
+    
+
+# class GroupListCreateView(
+#     generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin
+# ):
+#     serializer_class = PostSerializer
+#     permission_classes = [permissions.IsAdminUser,]
+#     queryset = Group.objects.all()
+
+#     # def perform_create(self, serializer):
+#     #     user = self.request.user
+#     #     serializer.save(author=user)
+#     #     return super().perform_create(serializer)
+
+#     def get(self, request: Request, *args, **kwargs):
+#         return self.list(request, *args, **kwargs)
+
+#     def post(self, request: Request, *args, **kwargs):
+#         return self.create(request, *args, **kwargs)

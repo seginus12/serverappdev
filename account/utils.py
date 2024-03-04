@@ -5,6 +5,9 @@ from django.conf import settings
 from .models import CustomUser, OneTimePassword
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 import datetime
+from django.contrib.auth.models import Group
+from django.contrib.auth.models import Permission
+from django.core.exceptions import PermissionDenied
 
 
 def generate_otp(length=settings.OTP_LENGTH):
@@ -36,5 +39,25 @@ def get_valid_refresh_count(user):
             continue
         if (token.expires_at.replace(tzinfo=None) - datetime.datetime.now()).total_seconds() > 0:
             vaild_tokens_count += 1
-    print(vaild_tokens_count)
+    # print(vaild_tokens_count)
     return vaild_tokens_count
+
+def check_perm(user: CustomUser, permission: string):
+    groups = Group.objects.filter(user=user)
+    for group in groups:
+        permissions = group.permissions.all()
+        for perm in permissions:
+            if perm.codename == permission:
+                return True
+    return False
+
+def check_user_permissions(user: CustomUser, permission: string):
+    def decorator(f):
+        if check_perm(user, permission):
+            def wrapper(*args, **kwargs):
+                method = f(*args, **kwargs)
+                return method
+        else:
+            raise PermissionDenied()
+        return wrapper
+    return decorator
