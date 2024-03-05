@@ -4,7 +4,7 @@ from .serializers import *
 from rest_framework.response import Response
 from rest_framework import generics, mixins, status
 from rest_framework import permissions
-from .utils import send_otp_email, generate_otp, check_user_permissions
+from .utils import send_otp_email, generate_otp, check_user_permissions, check_user_group
 from .models import OneTimePassword, CustomUser
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework.authentication import TokenAuthentication
@@ -173,10 +173,11 @@ class BlacklistJWTTokensView(APIView):
 
 
 class ResetTokensView(APIView):
-    permission_classes = (permissions.IsAdminUser,)
+    # permission_classes = (permissions.IsAdminUser,)
     authentication_classes = (JWTAuthentication,)
 
-    @check_user_permissions(permission="delete_token")
+    # @check_user_permissions(permission="delete_token")
+    @check_user_group(group="Staff")
     def delete(self, request):
         Token.objects.all().delete()
         return Response(
@@ -195,11 +196,12 @@ class GroupCRUDView(
     authentication_classes = (JWTAuthentication,)
     serializer_class = GroupSerializer
     queryset = Group.objects.all()
-    permission_classes = [permissions.IsAdminUser,]
+    # permission_classes = [permissions.IsAdminUser,]
 
     def get(self, request: Request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
+    @check_user_permissions("change_group")
     def put(self, request: Request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 

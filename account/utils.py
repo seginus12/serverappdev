@@ -51,10 +51,28 @@ def check_perm(user: CustomUser, permission: string):
                 return True
     return False
 
+def check_group(user: CustomUser, group: string):
+    groups = Group.objects.filter(user=user)
+    for _group in groups:
+        if _group.name == group:
+            return True
+    return False
+
 def check_user_permissions(permission):
     def decorator(function):
-        def wrapper(viewClass, request):
+        def wrapper(viewClass, request, pk=None):
             if check_perm(request.user, permission):
+                result = function(viewClass, request)
+            else:
+                raise PermissionDenied()
+            return result
+        return wrapper
+    return decorator
+
+def check_user_group(group):
+    def decorator(function):
+        def wrapper(viewClass, request):
+            if check_group(request.user, group):
                 result = function(viewClass, request)
             else:
                 raise PermissionDenied()
