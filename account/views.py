@@ -19,6 +19,9 @@ from rest_framework.request import Request
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import PermissionDenied
+import logging
+
+db_logger = logging.getLogger('db')
 
 
 class RegisterUserView(GenericAPIView):
