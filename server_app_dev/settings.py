@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
 from pathlib import Path
 from datetime import timedelta
 
@@ -26,7 +25,7 @@ SECRET_KEY = 'django-insecure-np9l9xm(#tmd)xn@cz@lp)lsjg*vbvn_u8z1^+r$ugnjtv5!(q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -84,8 +83,12 @@ WSGI_APPLICATION = 'server_app_dev.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': "postgres",
+        'USER': "postgres",
+        'PASSWORD': "postgres",
+        'HOST': "postgres",
+        'PORT': 5432,
     }
 }
 
@@ -232,4 +235,30 @@ LOGGING = {
             'propagate': False,
         }
     }
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis:6379",
+    }
+}
+
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_BEAT_SCHEDULE = {
+    'requests_report': {
+        'task': 'account.tasks.make_report',
+        'schedule': 60.0,
+        'options': {
+            'expires': 15.0,
+            },
+    },
+    'parse_events': {
+        'task': 'account.tasks.parse_events',
+        'schedule': 60.0,
+        'options': {
+            'expires': 15.0,
+            },
+    },
 }

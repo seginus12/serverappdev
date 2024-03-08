@@ -6,13 +6,39 @@ services:
     build: .
     ports:
       - 8000:8000
-    command: ['python3', 'manage.py', 'runserver', '0.0.0.0:8000']
+    command: python manage.py runserver 0.0.0.0:8000
     depends_on:
       - redis
+      - postgres
+  celery:
+    image: celery
+    build: .
+    command: python -m celery -A server_app_dev worker -l info
+    depends_on:
+      - redis
+      - web
+  celery-beat:
+    image: celery-beat
+    build: .
+    command: python -m celery -A server_app_dev beat -l info
+    depends_on:
+      - celery
+      - redis
+      - web
   redis:
     image: redis
     expose:
       - 6379
     command: redis-server --save 60 1 --loglevel warning
+  postgres:
+      image: postgres
+      container_name: postgres
+      environment:
+          - POSTGRES_DB=postgres
+          - POSTGRES_USER=postgres
+          - POSTGRES_PASSWORD=postgres
+      volumes:
+          - pgdata:/var/lib/postgresql/data/
 
-      
+volumes:
+    pgdata:
