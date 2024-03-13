@@ -15,10 +15,3 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
 
-app.conf.beat_schedule = {
-    'send-mail-every-day-at-8': {
-        'task': 'server_app_dev.tasks.make_report',
-        'schedule': 60.0,
-    }
-    
-}

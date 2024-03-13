@@ -3,8 +3,11 @@ from django_db_logger.models import StatusLog
 from operator import itemgetter
 from bs4 import BeautifulSoup
 import requests
+from server_app_dev.celery import app
+import shutil
 
-@shared_task()
+
+@app.task()
 def make_report():
     f = open('requests_report.txt', 'w')
     requests = list(StatusLog.objects.values_list('msg', flat=True))
@@ -18,8 +21,9 @@ def make_report():
     for request in sorted_rating:
         f.write(str(request['count']) + ' - ' + request['request'] + '\n')
     f.close()
+    shutil.move('./requests_report.txt', './reports/requests_report.txt')
 
-@shared_task()
+@app.task()
 def parse_events():
     request = requests.get("https://hanty-mansiysk.info/afisha")
     soup = BeautifulSoup(request.content, features="html.parser")
@@ -34,3 +38,4 @@ def parse_events():
         )
         f.write(str(el) + '\n')
     f.close()
+    shutil.move('./events_report.txt', './reports/events_report.txt')

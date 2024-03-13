@@ -13,7 +13,9 @@ services:
   celery:
     image: celery
     build: .
-    command: python -m celery -A server_app_dev worker -l info
+    command: sh -c "python -m celery -A server_app_dev worker -l info && touch requests_report.txt events_report.txt"
+    volumes:
+      - ./reports/:/app/reports/
     depends_on:
       - redis
       - web
