@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div>
+        <form method="POST">
+            {% csrf_token %}
+            <h3>Registation</h3>
+                <label for="floatingInput">Email</label>
+                <input type="Text" name="email">
+                <label for="floatingPassword">Password</label>
+                <input type="password" name="password">
+                <label for="floatingPassword">Password confirmation</label>
+                <input type="password" name="password2">
+           <button>Register</button>
+        </form>
+    </div>
+</body>
+</html>
