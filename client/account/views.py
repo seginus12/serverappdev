@@ -371,10 +371,11 @@ class LoginUserOAuthView(APIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = UserLoginOAuthSerializer
 
-    def get(self, request):
+    def post(self, request):
         serializer=self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.login(request)
+        data = serializer.login(serializer.validated_data, request)
         return Response(
+            data=data,
             status=status.HTTP_200_OK
         )

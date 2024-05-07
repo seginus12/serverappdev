@@ -14,6 +14,8 @@ import datetime
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 import requests
 import logging 
+import string
+import random
 
 
 User = get_user_model()
@@ -216,8 +218,14 @@ class GroupPermissionSerializer(serializers.Serializer):
 
 
 class UserLoginOAuthSerializer(serializers.Serializer):
-    def login(self, my_request):
-        code = my_request.GET.get('code')
+    code = serializers.CharField(max_length=64, label="code")
+
+    def validate(self, attrs):
+        return attrs
+    
+    def login(self, attrs, my_request):
+        # code = my_request.GET.get('code')
+        code = attrs['code']
         headers={
             "Cache-Control": "no-cache",
             "Content-Type": "application/x-www-form-urlencoded"
@@ -230,19 +238,28 @@ class UserLoginOAuthSerializer(serializers.Serializer):
             "grant_type": "authorization_code",
             "redirect_uri": settings.REDIRECT_URL
         }
-        logging.info(query_params)
+        # logging.info(query_params)
         response = requests.post(f"{settings.OAUTH_SERVER_URL}oauth/token/", headers=headers, data=query_params)
-        logging.info(response.text)
         token = response.json()['access_token']
+        if not token:
+            # logging.info(response.text)
+            raise AuthenticationFailed(f'Authentication failed.\n {response.text}')
         headers = {'Authorization': f'Bearer {token}'}
         response = requests.get(f"{settings.OAUTH_SERVER_URL}account/user", headers=headers)
-        logging.info(response.text)
-        return attrs
-
-        # print(response.json())
-
-
-
+        username = response.json()['username']
+        try:
+            temp_email = username + '@oauth.ru'
+            password = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(random.randint(8, 12)))
+            user = CustomUser(email=temp_email, password=password)
+            user.save()
+        except:
+            AuthenticationFailed(f'Error during user creation.')
+        tokens = user.tokens()
+        return {
+            'username': user.email,
+            'access_token': tokens['access'],
+            'refresh_token': tokens['refresh'], 
+        }
 
         # if username and password:
         #     user = authenticate(request=request, username=username, password=password)
