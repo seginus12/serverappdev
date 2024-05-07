@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 from pathlib import Path
 from datetime import timedelta
+import logging
+import sys
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -267,5 +270,30 @@ CLIENT_ID = "AT6INiEg3zoEiQJf3KQd5TjpBe8tdhc9oDvkDZ9r"
 CLIENT_SECRET = "LPXVbYF1I9gGCqAmFUlITs9wylYWDEA5I9oWMIrprCSdaCNaj5sUAJltzQV9ySKwXCk35Bot7TavaItqWXVlMHXY7WneEUPudFxQI4EXLI2nmqlcDlbUyGJrI8JaQ42L"
 CODE_VERIFIER = "UV7NQEQ3KOBDB0D18K8VE6BO9TGA0HUAYAXTCJFN8DQ7U9I8A7VBFL18Q5UFM8ON900V9"
 CODE_CHALLENGE = "pCHaxvoUpqL1U2LKHOk7-ZRSP592Z7-7ghwOQVu-WSk"
-OAUTH_SERVER_URL = "http://127.0.0.1:8000/"
-# SERVER_CODE = "0LqMgzRNIcCwiJk09Dk4gzH9ACZ9hY"
+OAUTH_SERVER_URL = "http://server:8080/"
+REDIRECT_URL = "http://127.0.0.1:8000/api/account/login_oauth"
+
+LOGGING = {
+   'version': 1,
+   'disable_existing_loggers': False,
+   'formatters': {
+       'verbose': {
+           'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+       },
+   },
+   'handlers': {
+       'console': {
+           'level': 'INFO',
+           'class': 'logging.StreamHandler',
+           'stream': sys.stdout,
+           'formatter': 'verbose'
+       },
+   },
+   'loggers': {
+       '': {
+           'handlers': ['console'],
+           'level': 'INFO',
+           'propagate': True,
+       },
+   },
+}

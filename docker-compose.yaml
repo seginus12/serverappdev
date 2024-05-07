@@ -5,8 +5,8 @@ services:
     image: web
     build: ./client/
     ports:
-      - 80:80
-    command: python manage.py runserver 0.0.0.0:80
+      - 8000:8000
+    command: python manage.py runserver 0.0.0.0:8000
     depends_on:
       - redis
       - postgres
@@ -14,8 +14,8 @@ services:
     image: server
     build: ./server/
     ports:
-      - 8000:8000
-    command: python manage.py runserver 0.0.0.0:8000
+      - 8080:8080
+    command: python manage.py runserver 0.0.0.0:8080
     volumes:
       - ./server/db.sqlite3:/app/db.sqlite3
     depends_on:

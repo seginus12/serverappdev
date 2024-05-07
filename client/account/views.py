@@ -360,7 +360,7 @@ class GetLoginOauthUrlView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def get(self, request):
-        url = f"{settings.OAUTH_SERVER_URL}oauth/authorize/?response_type=code&code_challenge={settings.CODE_CHALLENGE}&client_id={settings.CLIENT_ID}&redirect_uri=http://127.0.0.1:8000/noexist/callback"
+        url = f"127.0.0.1:8080/oauth/authorize/?response_type=code&code_challenge={settings.CODE_CHALLENGE}&client_id={settings.CLIENT_ID}&redirect_uri={settings.REDIRECT_URL}"
         return Response(
             {"url": url},
             status=status.HTTP_200_OK      
@@ -371,9 +371,10 @@ class LoginUserOAuthView(APIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = UserLoginOAuthSerializer
 
-    def post(self, request):
+    def get(self, request):
         serializer=self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+        serializer.login(request)
         return Response(
             status=status.HTTP_200_OK
         )

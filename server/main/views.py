@@ -7,7 +7,9 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import generics
 from .models import User
 from .serializers import UserSerializer
-from rest_framework import permissions
+from rest_framework import permissions, generics, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 User = get_user_model()
 
 
@@ -16,10 +18,10 @@ class UserLoginView(View):
         return render(request, 'main/login.html')
 
     def post(self, request, **kwargs):
-        email = request.POST.get('email')
+        username = request.POST.get('username')
         password = request.POST.get('password')
 
-        user = authenticate(request, username=email, password=password)
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             return HttpResponseRedirect(request.GET.get('next'))
@@ -39,8 +41,16 @@ class UserList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
 
 
-class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+class UserDetail(APIView):
     permission_classes = (permissions.AllowAny,)
-    queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    def get(self, request):
+        serializer=self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.get_user(request)
+
+        return Response(
+            user,
+            status=status.HTTP_201_CREATED
+        )

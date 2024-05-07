@@ -13,6 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 import datetime
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 import requests
+import logging 
 
 
 User = get_user_model()
@@ -215,23 +216,30 @@ class GroupPermissionSerializer(serializers.Serializer):
 
 
 class UserLoginOAuthSerializer(serializers.Serializer):
-    code = serializers.CharField(max_length=64, label="oauth_code")
-
-    def validate(self, attrs):
-        code = attrs.get('code')
-        request = self.context.get('request')
+    def login(self, my_request):
+        code = my_request.GET.get('code')
+        headers={
+            "Cache-Control": "no-cache",
+            "Content-Type": "application/x-www-form-urlencoded"
+            }
         query_params = {
             "client_id": settings.CLIENT_ID,
             "client_secret": settings.CLIENT_SECRET,
             "code": code,
             "code_verifier": settings.CODE_VERIFIER,
-            "grant_type": "authorization_code"
+            "grant_type": "authorization_code",
+            "redirect_uri": settings.REDIRECT_URL
         }
-        response = requests.post(f"{settings.OAUTH_SERVER_URL}oauth/token/", query_params)
+        logging.info(query_params)
+        response = requests.post(f"{settings.OAUTH_SERVER_URL}oauth/token/", headers=headers, data=query_params)
+        logging.info(response.text)
         token = response.json()['access_token']
         headers = {'Authorization': f'Bearer {token}'}
-        response = requests.get(f"{settings.OAUTH_SERVER_URL}/user", headers=headers)
-        print(response.json()['email'])
+        response = requests.get(f"{settings.OAUTH_SERVER_URL}account/user", headers=headers)
+        logging.info(response.text)
+        return attrs
+
+        # print(response.json())
 
 
 
