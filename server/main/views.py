@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import generics
-from .models import User
+from django.contrib.auth.models import User 
 from .serializers import UserSerializer
 from rest_framework import permissions, generics, status
 from rest_framework.response import Response
